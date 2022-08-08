@@ -1,9 +1,19 @@
 <script setup>
 import HelloWorld from './components/HelloWorld.vue'
+
+import { useCounterStore } from "./stores/counter"
+
+const store = useCounterStore()
+const handleClick = ()=>{
+  store.count++
+  // store.increment()
+}
 </script>
 
 <template>
-  <HelloWorld msg="Vite + Vue" />
+  <div>{{ store.count}}</div>
+  <div>{{ store.doubleCount}}</div>
+  <button @click="handleClick">加一</button>
 </template>
 
 <style scoped>

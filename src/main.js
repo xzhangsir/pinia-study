@@ -2,7 +2,8 @@ import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
 
-import { createPinia } from 'pinia'
+// import { createPinia } from 'pinia'
+import { createPinia } from '@/pinia'
 
 const app = createApp(App)
 
@@ -14,8 +15,8 @@ const app = createApp(App)
 
 app.use(Plugin) //use会去调用 plugin的install方法
  */
-
-app.use(createPinia())
+const pinia = createPinia()
+app.use(pinia)
 
 app.mount('#app')
 
