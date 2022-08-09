@@ -1,7 +1,7 @@
 import { defineStore } from '@/pinia'
 import { reactive, computed, toRefs } from 'vue'
 
-export const useCounterStore = defineStore('counter', {
+/* export const useCounterStore = defineStore('counter', {
   state: () => {
     return { count: 1 }
   },
@@ -14,8 +14,8 @@ export const useCounterStore = defineStore('counter', {
     }
   }
 })
+ */
 
-/* 
 export const useCounterStore = defineStore('counter', () => {
   const state = reactive({ count: 1 })
 
@@ -29,4 +29,3 @@ export const useCounterStore = defineStore('counter', () => {
     increment
   }
 })
- */

@@ -5,8 +5,8 @@ import { useCounterStore } from "./stores/counter"
 
 const store = useCounterStore()
 const handleClick = ()=>{
-  store.count++
-  // store.increment()
+  // store.count++
+  store.increment()
 }
 </script>
 
