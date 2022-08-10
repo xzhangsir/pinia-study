@@ -4,8 +4,11 @@ import {
   computed,
   effectScope,
   reactive,
-  toRefs
+  toRefs,
+  isRef,
+  watch
 } from 'vue'
+import { addSubscription, triggerSubscription } from './pubSub'
 import { SymbolPinia } from './rootStore'
 
 export function defineStore(idOrOptions, setup) {
@@ -41,7 +44,6 @@ export function defineStore(idOrOptions, setup) {
 }
 
 function createSetupStore(id, setup, pinia) {
-  const store = reactive({})
   let scope
   const setupStore = pinia._e.run(() => {
     scope = effectScope()
@@ -50,7 +52,37 @@ function createSetupStore(id, setup, pinia) {
 
   function wrapAction(name, action) {
     return function () {
-      let ret = action.apply(store, arguments)
+      const afterCallbackList = []
+      const onErrorCallbackList = []
+      function after(callback) {
+        afterCallbackList.push(callback)
+      }
+      function onError(callback) {
+        onErrorCallbackList.push(callback)
+      }
+
+      triggerSubscription(actionSubscribes, { after, onError, store, name })
+      let ret
+      try {
+        ret = action.apply(store, arguments)
+        // triggerSubscription(afterCallbackList, ret)
+      } catch (error) {
+        triggerSubscription(onErrorCallbackList, error)
+      }
+
+      if (ret instanceof Promise) {
+        return ret
+          .then((val) => {
+            triggerSubscription(afterCallbackList, val)
+          })
+          .catch((error) => {
+            triggerSubscription(onErrorCallbackList, error)
+            return Promise.reject(error)
+          })
+      } else {
+        triggerSubscription(afterCallbackList, ret)
+      }
+
       return ret
     }
   }
@@ -64,6 +96,36 @@ function createSetupStore(id, setup, pinia) {
       setupStore[key] = wrapAction(key, prop)
     }
   }
+
+  function $patch(partialStoreOrMutaion) {
+    if (typeof partialStoreOrMutaion === 'function') {
+      partialStoreOrMutaion(store)
+    } else {
+      mergeReactiveObject(store, partialStoreOrMutaion)
+    }
+  }
+
+  const actionSubscribes = []
+
+  const partialStore = {
+    $patch,
+    // 当用户状态变化的时候 可以监控到变化 并且通知用户 发布订阅
+    $subscribe(callback, options) {
+      // 等同于 watch
+      scope.run(() =>
+        watch(
+          pinia.state.value[id],
+          (state) => {
+            callback({ type: '' }, state)
+          },
+          options
+        )
+      )
+    },
+    $onAction: addSubscription.bind(null, actionSubscribes)
+  }
+
+  const store = reactive(partialStore)
 
   Object.assign(store, setupStore)
 
@@ -91,6 +153,13 @@ function createOptionsStore(id, options, pinia) {
     )
   }
   const store = createSetupStore(id, setup, pinia)
+  store.$reset = function () {
+    const newState = state ? state() : {}
+    store.$patch((state) => {
+      Object.assign(state, newState)
+    })
+  }
+
   return store
 }
 
@@ -145,3 +214,24 @@ function createOptionsStore(id, options, pinia) {
 
   // console.log(store)
 } */
+
+function isObject(obj) {
+  return typeof obj === 'object' && obj !== null
+}
+function mergeReactiveObject(target, partialStore) {
+  for (let key in partialStore) {
+    // 如果是原型上的 不能合并
+    if (!partialStore.hasOwnProperty(key)) continue
+
+    const oldVal = target[key]
+    const newVal = partialStore[key]
+
+    // 状态有可能是REF  ref也不能递归
+    if (isObject(oldVal) && isObject(newVal) && isRef(newVal)) {
+      target[key] = mergeReactiveObject(oldVal, newVal)
+    } else {
+      target[key] = newVal
+    }
+  }
+  return target
+}
