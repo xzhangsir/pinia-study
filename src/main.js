@@ -16,6 +16,18 @@ const app = createApp(App)
 app.use(Plugin) //use会去调用 plugin的install方法
  */
 const pinia = createPinia()
+pinia.use(function ({ store }) {
+  let session = sessionStorage.getItem('state')
+  if (session) {
+    store.$state = JSON.parse(session)
+  }
+  //给pinia注入插件
+  // console.log(arguments)
+  store.$subscribe((mutation, state) => {
+    console.log(state)
+    sessionStorage.setItem('state', JSON.stringify(state))
+  })
+})
 app.use(pinia)
 
 app.mount('#app')

@@ -1,53 +1,34 @@
-<script setup>
-import HelloWorld from './components/HelloWorld.vue'
-
+<script>
+import { mapState, mapActions, mapWritableState } from "@/pinia";
 import { useCounterStore } from "./stores/counter"
-
-const store = useCounterStore()
-// store.increment()
-const handleClick = ()=>{
- /*  store.count++
-  store.fruits.push("葡萄") */
-  store.increment()
-
-
-  //批量修改 对象方式
- /* let fruits = [...store.fruits,"葡萄"]
-  store.$patch({
-    count:store.count + 1,
-    fruits
-  }) */
-  //批量修改 函数方式
-/*   store.$patch(()=>{
-    store.count++;
-    store.fruits = [...store.fruits, "葡萄"]
-  }) */
-
-  // 重置
-  /* store.$reset() */
-  
+export default {
+  computed:{
+    ...mapState(useCounterStore, ["count", "fruits","doubleCount"]),
+    ...mapState(useCounterStore,{
+      f:"fruits"
+    }),
+    // 可读可写 双向的
+    ...mapWritableState(useCounterStore, ["count"])
+    
+    
+  },
+  methods:{
+    ...mapActions(useCounterStore, ['increment'])
+  }
 }
-// 监控状态变化
-store.$subscribe((mutation,state)=>{
-  console.log("数据变化了",state)
-})
-// 监控用户有没有调用 action
-store.$onAction(({ after, onError ,name})=>{
-  console.log("action",name)
-  after((res)=>{
-    console.log("状态更新完毕", res)
-  })
-  onError((err)=>{
-    console.log("error了",err)
-  })
-})
+
+
+
 </script>
 
 <template>
-  <div>{{ store.count}}</div>
-  <div>{{ store.doubleCount}}</div>
-  <button @click="handleClick">加一</button>
-  <div v-for="item in store.fruits" :key = "item">
+  <div>{{ count}}</div>
+  <div>{{ f}}</div>
+  <div>{{ doubleCount}}</div>
+  <button @click="increment()">加一</button>
+  <button @click="count++">加一</button>
+
+  <div v-for="item in fruits" :key="item">
     {{item}}
   </div>
 </template>

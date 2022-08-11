@@ -9,7 +9,7 @@ import {
   watch
 } from 'vue'
 import { addSubscription, triggerSubscription } from './pubSub'
-import { SymbolPinia } from './rootStore'
+import { activePinia, setActivePinia, SymbolPinia } from './rootStore'
 
 export function defineStore(idOrOptions, setup) {
   let id
@@ -27,7 +27,10 @@ export function defineStore(idOrOptions, setup) {
   function useStore() {
     const currentInstance = getCurrentInstance()
     // 注册了一个store
-    const pinia = currentInstance && inject(SymbolPinia)
+    let pinia = currentInstance && inject(SymbolPinia)
+
+    if (pinia) setActivePinia(pinia)
+    pinia = activePinia
 
     if (!pinia._s.has(id)) {
       if (isSetupStore) {
@@ -105,7 +108,7 @@ function createSetupStore(id, setup, pinia) {
     }
   }
 
-  const actionSubscribes = []
+  let actionSubscribes = []
 
   const partialStore = {
     $patch,
@@ -122,12 +125,26 @@ function createSetupStore(id, setup, pinia) {
         )
       )
     },
-    $onAction: addSubscription.bind(null, actionSubscribes)
+    $onAction: addSubscription.bind(null, actionSubscribes),
+    $dispose: () => {
+      scope.stop()
+      actionSubscribes = []
+      pinia._s.delete(id)
+    }
   }
 
   const store = reactive(partialStore)
 
+  Object.defineProperty(store, '$state', {
+    get: () => pinia.state.value[id],
+    set: (state) => $patch(($state) => Object.assign($state, state))
+  })
+
   Object.assign(store, setupStore)
+
+  pinia._p.forEach((plugin) =>
+    Object.assign(store, plugin({ store, pinia, app: pinia._a }))
+  )
 
   pinia._s.set(id, store)
   return store
@@ -235,3 +252,5 @@ function mergeReactiveObject(target, partialStore) {
   }
   return target
 }
+
+// $patch $subscribe $onAction $dispose $reset
