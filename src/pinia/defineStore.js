@@ -38,9 +38,9 @@ function createOptionsStore(id, options, pinia) {
   const store = reactive({})
   function setup() {
     pinia.state.value[id] = state ? state() : {}
-    console.log(pinia.state)
+    // console.log(pinia.state)
     const localState = pinia.state.value[id]
-    return localState
+    return Object.assign(localState, actions)
   }
   // pinia._e 可以停止所有的store
   // 每个store 可以停止自己的
@@ -49,7 +49,23 @@ function createOptionsStore(id, options, pinia) {
     return scope.run(() => setup())
   })
 
-  Object.assign(store, setupStore)
+  function warapAction(name, action) {
+    return function () {
+      let ret = action.apply(store, arguments)
+      return ret
+    }
+  }
 
+  for (let key in setupStore) {
+    const prop = setupStore[key]
+    if (typeof prop === 'function') {
+      // 说明是actions
+      //对action进行扩展 aop思想
+      setupStore[key] = warapAction(key, prop)
+    }
+  }
+
+  Object.assign(store, setupStore)
+  console.log(store)
   pinia._s.set(id, store)
 }
