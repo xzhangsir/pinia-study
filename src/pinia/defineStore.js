@@ -19,6 +19,8 @@ export function defineStore(idOrOptions, setup) {
     id = idOrOptions.id
   }
 
+  const isSetupStore = typeof setup === 'function'
+
   function useStore() {
     //获取使用这个store的组件实例
     const currentInstance = getCurrentInstance()
@@ -27,7 +29,11 @@ export function defineStore(idOrOptions, setup) {
     console.log('pinia', pinia)
     if (!pinia._s.has(id)) {
       // 如果pinia._s中没有记录过这个store 就去创建一个
-      createOptionsStore(id, options, pinia)
+      if (isSetupStore) {
+        createSetupStore(id, setup, pinia)
+      } else {
+        createOptionsStore(id, options, pinia)
+      }
     }
     const store = pinia._s.get(id)
     return store
@@ -36,29 +42,9 @@ export function defineStore(idOrOptions, setup) {
   return useStore
 }
 
-function createOptionsStore(id, options, pinia) {
-  let { state, getters, actions } = options
-  console.log(state)
-  console.log(getters)
-  console.log(actions)
+function createSetupStore(id, setup, pinia) {
   let scope
   const store = reactive({})
-  function setup() {
-    pinia.state.value[id] = state ? state() : {}
-    // console.log(pinia.state)
-    const localState = toRefs(pinia.state.value[id])
-    return Object.assign(
-      localState,
-      actions,
-      Object.keys(getters || {}).reduce((computedGetters, name) => {
-        // getters  包裹一层 computed
-        computedGetters[name] = computed(() => {
-          return getters[name].call(store, store)
-        })
-        return computedGetters
-      }, {})
-    )
-  }
   // pinia._e 可以停止所有的store
   // 每个store 可以停止自己的
   const setupStore = pinia._e.run(() => {
@@ -85,4 +71,60 @@ function createOptionsStore(id, options, pinia) {
   Object.assign(store, setupStore)
   console.log(store)
   pinia._s.set(id, store)
+  return store
+}
+
+function createOptionsStore(id, options, pinia) {
+  let { state, getters, actions } = options
+  console.log(state)
+  console.log(getters)
+  console.log(actions)
+  let scope
+  const store = reactive({})
+  function setup() {
+    pinia.state.value[id] = state ? state() : {}
+    // console.log(pinia.state)
+    const localState = toRefs(pinia.state.value[id])
+    return Object.assign(
+      localState,
+      actions,
+      Object.keys(getters || {}).reduce((computedGetters, name) => {
+        // getters  包裹一层 computed
+        computedGetters[name] = computed(() => {
+          return getters[name].call(store, store)
+        })
+        return computedGetters
+      }, {})
+    )
+  }
+
+  // 可以直接调用  createSetupStore(id, setup, pinia)
+
+  // pinia._e 可以停止所有的store
+  // 每个store 可以停止自己的
+  const setupStore = pinia._e.run(() => {
+    scope = effectScope()
+    return scope.run(() => setup())
+  })
+
+  function warapAction(name, action) {
+    return function () {
+      let ret = action.apply(store, arguments)
+      return ret
+    }
+  }
+
+  for (let key in setupStore) {
+    const prop = setupStore[key]
+    if (typeof prop === 'function') {
+      // 说明是actions
+      //对action进行扩展 aop思想
+      setupStore[key] = warapAction(key, prop)
+    }
+  }
+
+  Object.assign(store, setupStore)
+  console.log(store)
+  pinia._s.set(id, store)
+  return store
 }
