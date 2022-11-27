@@ -1,12 +1,17 @@
-<script>
-export default {
+<script setup>
+  import { useCounterStore } from "./stores/counter"
 
-}
+  const store = useCounterStore()
 
+  const handleClick = () => {
+    store.increment()
+  }
 </script>
 
 <template>
-  <div>pinia</div>
+  <div>{{ store.count}}</div>
+  <div>{{ store.doubleCount }}</div>
+  <button @click="handleClick">加一</button>
 </template>
 
 <style scoped>
