@@ -1,4 +1,11 @@
-import { effectScope, getCurrentInstance, inject, reactive } from 'vue'
+import {
+  computed,
+  effectScope,
+  getCurrentInstance,
+  inject,
+  reactive,
+  toRefs
+} from 'vue'
 import { SymbolPinia } from './rootStore'
 
 export function defineStore(idOrOptions, setup) {
@@ -39,8 +46,18 @@ function createOptionsStore(id, options, pinia) {
   function setup() {
     pinia.state.value[id] = state ? state() : {}
     // console.log(pinia.state)
-    const localState = pinia.state.value[id]
-    return Object.assign(localState, actions)
+    const localState = toRefs(pinia.state.value[id])
+    return Object.assign(
+      localState,
+      actions,
+      Object.keys(getters || {}).reduce((computedGetters, name) => {
+        // getters  包裹一层 computed
+        computedGetters[name] = computed(() => {
+          return getters[name].call(store, store)
+        })
+        return computedGetters
+      }, {})
+    )
   }
   // pinia._e 可以停止所有的store
   // 每个store 可以停止自己的
