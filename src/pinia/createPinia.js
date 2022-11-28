@@ -1,5 +1,5 @@
 import { effectScope, markRaw, ref } from 'vue'
-import { SymbolPinia } from './rootStore'
+import { SymbolPinia, setActivePinia } from './rootStore'
 
 export function createPinia() {
   const scope = effectScope(true)
@@ -9,6 +9,7 @@ export function createPinia() {
   const _p = []
   const pinia = markRaw({
     install(app) {
+      setActivePinia(pinia)
       pinia._a = app
       // pinia  希望能被共享出去
       // 将pinia的实例暴露到app上，所有的组件都可以通过inject注入进来

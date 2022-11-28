@@ -8,7 +8,7 @@ import {
   isRef,
   watch
 } from 'vue'
-import { SymbolPinia } from './rootStore'
+import { activePinia, setActivePinia, SymbolPinia } from './rootStore'
 import { addSubscription, triggerSubscription } from './pubSub'
 
 export function defineStore(idOrOptions, setup) {
@@ -28,7 +28,11 @@ export function defineStore(idOrOptions, setup) {
     //获取使用这个store的组件实例
     const currentInstance = getCurrentInstance()
     // 注册了一个store
-    const pinia = currentInstance && inject(SymbolPinia)
+    let pinia = currentInstance && inject(SymbolPinia)
+
+    if (pinia) setActivePinia(pinia)
+    pinia = activePinia
+
     console.log('pinia', pinia)
     if (!pinia._s.has(id)) {
       // 如果pinia._s中没有记录过这个store 就去创建一个

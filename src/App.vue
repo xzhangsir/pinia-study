@@ -1,5 +1,6 @@
 <script setup>
-  import { useCounterStore } from "./stores/counter"
+  import MapTest from "./components/mapTest.vue";
+import { useCounterStore } from "./stores/counter"
   import { useFruits } from "./stores/fruits"
 
   const store = useCounterStore()
@@ -83,6 +84,8 @@ store.$onAction(({ after, onError, name }) => {
         </div>
       </div>
   </div>
+  <div>-----------</div>
+  <MapTest/>
 </template>
 
 <style scoped>
