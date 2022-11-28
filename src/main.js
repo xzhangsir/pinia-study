@@ -7,6 +7,20 @@ import { createPinia } from '@/pinia'
 const app = createApp(App)
 
 const pinia = createPinia()
+
+pinia.use(function ({ store, pinia }) {
+  // console.log('arguments', arguments)
+  const key = `pinia_state_${store.$id}`
+  let session = sessionStorage.getItem(key)
+  if (session) {
+    store.$state = JSON.parse(session)
+  }
+  store.$subscribe((mutation, state) => {
+    console.log(state)
+    sessionStorage.setItem(key, JSON.stringify(state))
+  })
+})
+
 app.use(pinia)
 
 app.mount('#app')

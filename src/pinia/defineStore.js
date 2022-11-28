@@ -133,7 +133,8 @@ function createSetupStore(id, setup, pinia) {
       scope.stop()
       actionSubscribes = []
       pinia._s.delete(id)
-    }
+    },
+    $id: id
   }
 
   const store = reactive(partialStore)
@@ -144,6 +145,11 @@ function createSetupStore(id, setup, pinia) {
   })
 
   Object.assign(store, setupStore)
+
+  pinia._p.forEach((plugin) => {
+    Object.assign(store, plugin({ store, pinia, app: pinia._a }))
+  })
+
   console.log(store)
   pinia._s.set(id, store)
   return store

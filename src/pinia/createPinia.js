@@ -6,6 +6,7 @@ export function createPinia() {
 
   const state = scope.run(() => ref({}))
 
+  const _p = []
   const pinia = markRaw({
     install(app) {
       pinia._a = app
@@ -15,6 +16,11 @@ export function createPinia() {
       // 兼容vue2 this.$pinia 可以访问到
       app.config.globalProperties.$pinia = pinia
     },
+    use(plugin) {
+      _p.push(plugin)
+      return this
+    },
+    _p,
     _a: null,
     state, //所有的状态
     _e: scope, // 用来管理这个应用的effectScope

@@ -26,16 +26,16 @@
       vegetables:newVegetables
     }) */
 
-   /*    //批量修改 函数方式
+      //批量修改 函数方式
     fruitsStore.$patch(()=>{
         fruitsStore.vegetables.push("红薯")
         fruitsStore.fruits.push("葡萄")
-    }) */
+    })
 
-    fruitsStore.$state = {
+   /*  fruitsStore.$state = {
       vegetables: ["橘子"]
     }
-    
+     */
 
   }
 
