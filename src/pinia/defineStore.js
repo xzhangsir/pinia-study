@@ -4,7 +4,8 @@ import {
   getCurrentInstance,
   inject,
   reactive,
-  toRefs
+  toRefs,
+  isRef
 } from 'vue'
 import { SymbolPinia } from './rootStore'
 
@@ -44,7 +45,7 @@ export function defineStore(idOrOptions, setup) {
 
 function createSetupStore(id, setup, pinia) {
   let scope
-  const store = reactive({})
+
   // pinia._e 可以停止所有的store
   // 每个store 可以停止自己的
   const setupStore = pinia._e.run(() => {
@@ -68,6 +69,21 @@ function createSetupStore(id, setup, pinia) {
     }
   }
 
+  function $patch(partialStoreOrMutaion) {
+    if (typeof partialStoreOrMutaion === 'function') {
+      partialStoreOrMutaion(store)
+    } else {
+      // 对象合并
+      mergeReactiveObject(store, partialStoreOrMutaion)
+    }
+  }
+
+  const partialStore = {
+    $patch
+  }
+
+  const store = reactive(partialStore)
+
   Object.assign(store, setupStore)
   console.log(store)
   pinia._s.set(id, store)
@@ -79,8 +95,8 @@ function createOptionsStore(id, options, pinia) {
   console.log(state)
   console.log(getters)
   console.log(actions)
-  let scope
-  const store = reactive({})
+  // let scope
+  // const store = reactive({})
   function setup() {
     pinia.state.value[id] = state ? state() : {}
     // console.log(pinia.state)
@@ -99,8 +115,8 @@ function createOptionsStore(id, options, pinia) {
   }
 
   // 可以直接调用  createSetupStore(id, setup, pinia)
-
-  // pinia._e 可以停止所有的store
+  return createSetupStore(id, setup, pinia)
+  /*   // pinia._e 可以停止所有的store
   // 每个store 可以停止自己的
   const setupStore = pinia._e.run(() => {
     scope = effectScope()
@@ -126,5 +142,24 @@ function createOptionsStore(id, options, pinia) {
   Object.assign(store, setupStore)
   console.log(store)
   pinia._s.set(id, store)
-  return store
+  return store */
+}
+
+function mergeReactiveObject(target, partialStore) {
+  for (let key in partialStore) {
+    // 如果是原型上的 不能合并
+    if (!partialStore.hasOwnProperty(key)) continue
+    const oldVal = target[key]
+    const newVal = partialStore[key]
+    // 状态有可能是ref  ref也不能递归
+    if (isObject(oldVal) && isObject(newVal) && isRef(newVal)) {
+      target[key] = mergeReactiveObject(oldVal, newVal)
+    } else {
+      target[key] = newVal
+    }
+  }
+  return target
+}
+function isObject(obj) {
+  return typeof obj === 'object' && obj !== null
 }

@@ -1,20 +1,58 @@
 <script setup>
   import { useCounterStore } from "./stores/counter"
+  import { useFruits } from "./stores/fruits"
 
   const store = useCounterStore()
 
   const handleClick = () => {
     store.increment()
   }
+
+  const fruitsStore = useFruits()
+  const addFruits = ()=>{
+    /* fruitsStore.fruits.push("菠萝")
+    fruitsStore.vegetables.push("笋") */
+
+  /*    //批量修改 对象方式
+    let newFruits = [...fruitsStore.fruits,"菠萝"]
+    let newVegetables = [...fruitsStore.vegetables, "笋"]
+    fruitsStore.$patch({
+      fruits: newFruits,
+      vegetables:newVegetables
+    }) */
+
+      //批量修改 函数方式
+    fruitsStore.$patch(()=>{
+        fruitsStore.vegetables.push("红薯")
+        fruitsStore.fruits.push("葡萄")
+    })
+  }
+    
 </script>
 
 <template>
   <div>{{ store.count}}</div>
   <div>{{ store.doubleCount }}</div>
   <button @click="handleClick">加一</button>
+  <button @click="addFruits">添加水果和蔬菜</button>
+  <div class = "flex" style = "justify-content: space-around;">
+      <div>
+          <div v-for="item in fruitsStore.fruits" :key="item">
+            {{item}}
+          </div>
+      </div>
+      <div>
+        <div v-for="item in fruitsStore.vegetables" :key="item">
+          {{item}}
+        </div>
+      </div>
+  </div>
 </template>
 
 <style scoped>
+.flex{
+  display: flex;
+}
 .logo {
   height: 6em;
   padding: 1.5em;
