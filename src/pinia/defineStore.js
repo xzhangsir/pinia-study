@@ -111,7 +111,7 @@ function createSetupStore(id, setup, pinia) {
     }
   }
 
-  const actionSubscribes = []
+  let actionSubscribes = []
 
   const partialStore = {
     $patch,
@@ -128,10 +128,20 @@ function createSetupStore(id, setup, pinia) {
         )
       })
     },
-    $onAction: addSubscription.bind(null, actionSubscribes)
+    $onAction: addSubscription.bind(null, actionSubscribes),
+    $dispose: () => {
+      scope.stop()
+      actionSubscribes = []
+      pinia._s.delete(id)
+    }
   }
 
   const store = reactive(partialStore)
+
+  Object.defineProperty(store, '$state', {
+    get: () => pinia.state.value[id],
+    set: (state) => $patch(($state) => Object.assign($state, state))
+  })
 
   Object.assign(store, setupStore)
   console.log(store)

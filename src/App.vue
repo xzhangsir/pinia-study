@@ -6,6 +6,11 @@
 
   const handleClick = () => {
     store.increment()
+
+
+    setTimeout(() => {
+      store.$dispose()
+    }, 1000)
   }
 
   const fruitsStore = useFruits()
@@ -21,11 +26,17 @@
       vegetables:newVegetables
     }) */
 
-      //批量修改 函数方式
+   /*    //批量修改 函数方式
     fruitsStore.$patch(()=>{
         fruitsStore.vegetables.push("红薯")
         fruitsStore.fruits.push("葡萄")
-    })
+    }) */
+
+    fruitsStore.$state = {
+      vegetables: ["橘子"]
+    }
+    
+
   }
 
 
