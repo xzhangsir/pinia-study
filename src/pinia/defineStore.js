@@ -9,6 +9,7 @@ import {
   watch
 } from 'vue'
 import { SymbolPinia } from './rootStore'
+import { addSubscription, triggerSubscription } from './pubSub'
 
 export function defineStore(idOrOptions, setup) {
   let id
@@ -56,7 +57,38 @@ function createSetupStore(id, setup, pinia) {
 
   function warapAction(name, action) {
     return function () {
-      let ret = action.apply(store, arguments)
+      // let ret = action.apply(store, arguments)
+      const afterCallbackList = []
+      const onErrorCallbackList = []
+      function after(callback) {
+        afterCallbackList.push(callback)
+      }
+      function onError(callback) {
+        onErrorCallbackList.push(callback)
+      }
+
+      triggerSubscription(actionSubscribes, { after, onError, store, name })
+
+      let ret
+      try {
+        ret = action.apply(store, arguments)
+      } catch (error) {
+        triggerSubscription(onErrorCallbackList, error)
+      }
+
+      if (ret instanceof Promise) {
+        return ret
+          .then((val) => {
+            triggerSubscription(afterCallbackList, val)
+          })
+          .catch((error) => {
+            triggerSubscription(onErrorCallbackList, error)
+            return Promise.reject(error)
+          })
+      } else {
+        triggerSubscription(afterCallbackList, ret)
+      }
+
       return ret
     }
   }
@@ -79,6 +111,8 @@ function createSetupStore(id, setup, pinia) {
     }
   }
 
+  const actionSubscribes = []
+
   const partialStore = {
     $patch,
     // 当用户状态变化的时候 可以监控到变化 并且通知用户 发布订阅
@@ -93,7 +127,8 @@ function createSetupStore(id, setup, pinia) {
           options
         )
       })
-    }
+    },
+    $onAction: addSubscription.bind(null, actionSubscribes)
   }
 
   const store = reactive(partialStore)

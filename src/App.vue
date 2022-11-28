@@ -40,6 +40,17 @@
   fruitsStore.$subscribe((mutation, state) => {
     console.log("数据变化了", state, mutation)
   })
+
+// 监控用户有没有调用 action
+store.$onAction(({ after, onError, name }) => {
+  console.log("action", name)
+  after((res) => {
+    console.log("状态更新完毕", res)
+  })
+  onError((err) => {
+    console.log("error了", err)
+  })
+})
     
 </script>
 
