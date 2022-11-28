@@ -27,6 +27,14 @@
         fruitsStore.fruits.push("葡萄")
     })
   }
+
+
+  const reset = ()=>{
+    // 只能用于optionStore
+    fruitsStore.$reset()
+    // 不能用于setupStore
+    // store.$reset()
+  }
     
 </script>
 
@@ -34,6 +42,7 @@
   <div>{{ store.count}}</div>
   <div>{{ store.doubleCount }}</div>
   <button @click="handleClick">加一</button>
+  <button @click = "reset">重置</button>
   <button @click="addFruits">添加水果和蔬菜</button>
   <div class = "flex" style = "justify-content: space-around;">
       <div>

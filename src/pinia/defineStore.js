@@ -115,7 +115,14 @@ function createOptionsStore(id, options, pinia) {
   }
 
   // 可以直接调用  createSetupStore(id, setup, pinia)
-  return createSetupStore(id, setup, pinia)
+  const store = createSetupStore(id, setup, pinia)
+  store.$reset = function () {
+    const newState = state ? state() : {}
+    store.$patch((state) => {
+      Object.assign(state, newState)
+    })
+  }
+  return store
   /*   // pinia._e 可以停止所有的store
   // 每个store 可以停止自己的
   const setupStore = pinia._e.run(() => {
