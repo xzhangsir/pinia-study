@@ -35,6 +35,11 @@
     // 不能用于setupStore
     // store.$reset()
   }
+
+  // 监控状态变化
+  fruitsStore.$subscribe((mutation, state) => {
+    console.log("数据变化了", state, mutation)
+  })
     
 </script>
 

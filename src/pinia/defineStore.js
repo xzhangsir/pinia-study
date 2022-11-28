@@ -5,7 +5,8 @@ import {
   inject,
   reactive,
   toRefs,
-  isRef
+  isRef,
+  watch
 } from 'vue'
 import { SymbolPinia } from './rootStore'
 
@@ -79,7 +80,20 @@ function createSetupStore(id, setup, pinia) {
   }
 
   const partialStore = {
-    $patch
+    $patch,
+    // 当用户状态变化的时候 可以监控到变化 并且通知用户 发布订阅
+    $subscribe(callback, options) {
+      // 等同于watch
+      scope.run(() => {
+        watch(
+          pinia.state.value[id],
+          (state) => {
+            callback({ type: '修改数据的方式' }, state)
+          },
+          options
+        )
+      })
+    }
   }
 
   const store = reactive(partialStore)
